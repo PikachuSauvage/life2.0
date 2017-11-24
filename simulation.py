@@ -78,6 +78,31 @@ def read_config_file_v2(path):
 
 ###################### Reading files ######################
 
+def load_genome(INI_file):
+    config = read_config_file(INI_file)
+
+    # get inputs infos from the config file
+    GFF_file = config.get('INPUTS', 'GFF')
+    TSS_file = config.get('INPUTS', 'TSS')
+    TTS_file = config.get('INPUTS', 'TTS')
+    Prot_file = config.get('INPUTS', 'BARR_FIX')    
+    
+    # path to the input files (remove the "params.ini" from the path)
+    pth = INI_file[:-10]
+    gff_df_raw = load_gff(pth+GFF_file)
+    tss = load_tab_file(pth+TSS_file)
+    tts = load_tab_file(pth+TTS_file)
+    prot = load_tab_file(pth+Prot_file)
+
+    # Genome size
+    genome_size = get_genome_size(gff_df_raw)
+    gff_df = rename_gff_cols(gff_df_raw)
+    
+    # Strands orientation
+    strands = str2num(gff_df['strand'].values)
+    
+    return (tss, tts, prot, strands, genome_size)
+
 # you can combine those two functions
 def load_gff(filename):  
     gff_df_raw = pd.read_table(filename, sep='\t', comment='#', header=0)
@@ -262,16 +287,10 @@ def save_files(output_dir,
 #         Transcription Process (Simulation)              #
 ###########################################################
 
-def start_transcribing(INI_file, output_dir):
+def start_transcribing(INI_file, output_dir, tss, tts, prot, strands, genome_size):
 
     ####################### Params info ###################
-    config = read_config_file(INI_file)
-
-    # get inputs infos from the config file
-    GFF_file = config.get('INPUTS', 'GFF')
-    TSS_file = config.get('INPUTS', 'TSS')
-    TTS_file = config.get('INPUTS', 'TTS')
-    Prot_file = config.get('INPUTS', 'BARR_FIX')    
+    config = read_config_file(INI_file)  
 
     # get values from the config file
     m = config.getfloat('GLOBAL', 'm')
@@ -300,28 +319,17 @@ def start_transcribing(INI_file, output_dir):
     # define the output directory
     os.makedirs(output_dir, exist_ok=True)
     
-    # path to the input files (remove the "params.ini" from the path)
-    pth = INI_file[:-10]
-    gff_df_raw = load_gff(pth+GFF_file)
-    tss = load_tab_file(pth+TSS_file)
-    tts = load_tab_file(pth+TTS_file)
-    prot = load_tab_file(pth+Prot_file)
-
-    # TSS_pos
-    TSS_pos = (tss['TSS_pos'].values/DELTA_X).astype(int)
-    
     # Kon
     Kon = tss['TSS_strength'].values
     
     # Poff
     Poff = tts['TTS_proba_off'].values
-
-    # Genome size
-    genome_size = get_genome_size(gff_df_raw)
-    gff_df = rename_gff_cols(gff_df_raw)
-
+    
+    # TSS_pos
+    TSS_pos = (tss['TSS_pos'].values/DELTA_X).astype(int)
+    
     # Dict of transciption units with the list of tts belonging to TU.
-    TU_tts = get_TU_tts(tss, tts) 
+    TU_tts = get_TU_tts(tss, tts)
 
     # The RNAPs id
     RNAPs_id = np.full(RNAPS_NB, range(0, RNAPS_NB), dtype=int)
@@ -331,9 +339,6 @@ def start_transcribing(INI_file, output_dir):
 
     # RNAPs_last_pos
     RNAPs_last_pos = np.full(RNAPS_NB, NaN) #np.zeros(RNAPS_NB, dtype=int)
-
-    # Strands orientation
-    strands = str2num(gff_df['strand'].values)
 
     # list of all possible transcripts
     tr_id, tr_strand, tr_start, tr_end, tr_rate, tr_size, ts_beg_all_trs, ts_remain_all = get_tr_info(tss, tts, TU_tts, Kon, Poff)
@@ -412,7 +417,6 @@ def start_transcribing(INI_file, output_dir):
     save_mean_sig_wholeGenome = list()
 
     ########### Go !
-
     RNAPs_unhooked_id = np.copy(RNAPs_id)
 
     RNAPs_strand = np.full(RNAPS_NB, NaN)
@@ -643,8 +647,7 @@ def start_transcribing(INI_file, output_dir):
     for i, v in enumerate(tr_nbr):
         print("Transcript{} : {}".format(i, v))
 
-    return (GFF_file, TSS_file, TTS_file,
-            ITERATIONS_NB, RNAPS_NB,
+    return (ITERATIONS_NB, RNAPS_NB,
             tr_nbr, tr_times, init_rate, 
             RNAPs_tr, RNAPs_pos, RNAPs_unhooked_id,
             save_RNAPs_info, save_tr_info, save_Barr_sigma, save_Dom_size,
