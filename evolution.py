@@ -4,8 +4,8 @@ def start_evol():
     
 def evol_loop(genome,fitness):
     
-def inversion(genomedir):
+def inversion(genome):
     
-def indel(genomedir):
+def indel(genome):
     
 def get_fitness(gene_expression, expected_profile):
