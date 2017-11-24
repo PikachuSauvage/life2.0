@@ -1,0 +1,9 @@
+The idea is to see if there can be evolution of a genome to match a given profile of gene expression without affecting the gene sequences or prometers
+The mutations would then only affect gene expression through the modulation of supercoiling
+
+
+TO DO:
+-implement a function that take a genome and its fitness, create a new genome by mutations, run a simulation on it, compute its fitness and return either the old or the new genome according to their fitnesses
+-implement a function that makes random inversions in the genome
+-implement a function that makes random insertion/deletion in the genome
+-implement a function that compute the fitness given the results of a simulation and a target profile of gene expression
