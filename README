@@ -1,5 +1,9 @@
 The idea is to see if there can be evolution of a genome to match a given profile of gene expression without affecting the gene sequences or prometers
-The mutations would then only affect gene expression through the modulation of supercoiling
+The mutations would then only affect gene expression through the modulation of supercoiling.
+Supercoiling is constant between two barriers. Barriers are special proteins that are bound to some positions in the genome as defined in file prot.dat. Polymerases also act as barriers when they are transcribing. They increase supercoiling in front of them and decrease it behind them.
+We consider two types of mutations :
+-inversion : two genome poisitions (outside of the gene sequences) are randomly selected and the sequence between them (included) is inverted. This must then change the positions of the barriers in this sequence and the positions and orientations of the genes and transcipts in this sequence.
+-insertion/deletion : add/delete a genome position at random inside the genome (outside of the gene sequences and not where there is a barrier) the positions of the barriers, transcripts and genes after that position must be changed accordingly.
 
 
 TO DO:
