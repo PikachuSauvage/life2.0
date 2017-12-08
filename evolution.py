@@ -1,8 +1,41 @@
 import simulation as sim
 
-def start_evol():
+INI_file=sys.argv[1]
+output_dir=sys.argv[2]
+
+temperature = 1
+
+def evol_master():
     
-def evol_loop(tss, tts, prot, genome_size, fitness):
+def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel):
+    # making backups for the current genome
+    tss_backup = tss.DataFrame.copy()
+    tts_backup = tts.DataFrame.copy()
+    prot_backup = prot.DataFrame.copy()
+    genome_size_backup = genome_size
+    fitness_backup = fitness
+    
+    modification = inversion(p_inversion, tss, tts, prot, genome_size)
+    genome_size = indel(p_indel, tss, tts, prot, genome_size)
+    if genome_size != genome_size_backup:
+        modification = True
+    
+    # If the genome changed, we launch a simulation and compute it's fitness
+    if modification:
+        gene_expression = sim.start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size)
+        fitness = get_fitness(gene_expression, expected_profile)
+        
+        # if the new fitness is lower than the previous one
+        # and the random choice doesn't select the new genome
+        # we go back to the backups 
+        if fitness < fitness_backup and np.random.rand() > np.exp((fitness-fitness_backup)/temperature):
+                tss = tss_backup
+                tts = tts_backup
+                prot = prot_backup
+                genome_size = genome_size_backup
+                fitness = fitness_backup
+    return (tss, tts, prot, genome_size, fitness)
+                
     
 def inversion(p_inversion, tss, tts, prot, genome_size):
     if np.random.rand() < p_inversion:
