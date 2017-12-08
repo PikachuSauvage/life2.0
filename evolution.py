@@ -23,17 +23,17 @@ def inversion(p_inversion, tss, tts, prot, genome_size):
         max_pos = max([a,b])
         for i in range(len(tss['TUindex'])): # change transcript's positions and orientation
             if min_pos <= tss['TSS_pos'][i] and max_pos >= tss['TSS_pos'][i]:
-                tss['TSS_pos'][i] = min_pos + max_pos - tss['TSS_pos'][i]
-                tts['TTS_pos'][i] = min_pos + max_pos - tts['TTS_pos'][i]
+                tss.at[i,'TSS_pos'] = min_pos + max_pos - tss['TSS_pos'][i]
+                tts.at[i,'TTS_pos'] = min_pos + max_pos - tts['TTS_pos'][i]
                 if tss['TUorient'][i] == '+':
-                    tss['TUorient'][i] == '-'
-                    tts['TUorient'][i] == '-'
+                    tss.at[i,'TUorient'] = '-'
+                    tts.at[i,'TUorient'] = '-'
                 else:
-                    tss['TUorient'][i] == '+'
-                    tts['TUorient'][i] == '+'
+                    tss.at[i,'TUorient'] = '+'
+                    tts.at[i,'TUorient'] = '+'
         for i in range(len(prot['prot_pos'])):
             if min_pos <= prot['prot_pos'][i] and max_pos >= prot['prot_pos'][i]:
-                prot['prot_pos'][i] = min_pos + max_pos - prot['prot_pos'][i]
+                prot.at[i,'prot_pos'] = min_pos + max_pos - prot['prot_pos'][i]
         return True # if there has been an inversion
     else:
         return False # if no changes occured
@@ -58,18 +58,23 @@ def indel(p_indel, tss, tts, prot, genome_size):
             insertion = -1
         for i in range(len(tss['TUindex'])):
             if pos < tss['TSS_pos'][i]:
-                tss['TSS_pos'][i] += insertion
-                tts['TTS_pos'][i] += insertion
+                tss.at[i,'TSS_pos'] += insertion
+                tts.at[i,'TTS_pos'] += insertion
         deleted_prot = -1
         for i in range(len(prot['prot_pos'])):
             if pos < prot['prot_pos'][i]:
-                prot['prot_pos'][i] += insertion
+                prot.at[i,'prot_pos'] += insertion
             if pos == prot['prot_pos'][i]:
-                deleted_prot = i # check if a barrier is to be removed
+                deleted_prot = i # check if a barrier is being removed
         if deleted_prot != -1:
-            prot['prot_pos'].pop(deleted_prot)
-            prot['prot_name'].pop(deleted_prot)
+            prot.drop(deleted_prot)
         genome_size += insertion
     return genome_size
     
 def get_fitness(gene_expression, expected_profile):
+    if len(gene_expression) != len(expected_profile):
+        print("Error : gene_expression and expected_profile don't have the same length : %d vs %d",len(gene_expression),len(expected_profile))
+    total = sum(gene_expression)
+    profile = [expression / total for expression in gene_expression]
+    distance = sum([np.abs(profile[i]-expected_profile[i]) for i in range(len(profile))])
+    return np.exp(-distance) # fitness is exp(-distance) so it's between 0 and 1
