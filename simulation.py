@@ -98,10 +98,7 @@ def load_genome(INI_file):
     genome_size = get_genome_size(gff_df_raw)
     gff_df = rename_gff_cols(gff_df_raw)
     
-    # Strands orientation
-    strands = str2num(gff_df['strand'].values)
-    
-    return (tss, tts, prot, strands, genome_size)
+    return (tss, tts, prot, genome_size)
 
 # you can combine those two functions
 def load_gff(filename):  
@@ -287,7 +284,7 @@ def save_files(output_dir,
 #         Transcription Process (Simulation)              #
 ###########################################################
 
-def start_transcribing(INI_file, output_dir, tss, tts, prot, strands, genome_size):
+def start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size):
 
     ####################### Params info ###################
     config = read_config_file(INI_file)  
