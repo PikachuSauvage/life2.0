@@ -1,4 +1,7 @@
+import sys
 import simulation as sim
+import pandas as pd
+import numpy as np
 
 INI_file=sys.argv[1]
 output_dir=sys.argv[2]
@@ -6,12 +9,12 @@ output_dir=sys.argv[2]
 
 def evol_master():
     # read the evolution parameters from the config file
-    config = read_config_file(INI_file)
+    config = sim.read_config_file(INI_file)
     environment_file = config.get('EVOLUTION', 'environment')
-    temperature = config.get('EVOLUTION', 'temperature')
-    nbiter = config.get('EVOLUTION', 'nbiter')
-    p_inversion = config.get('EVOLUTION', 'p_inversion')
-    p_indel = config.get('EVOLUTION', 'p_indel')
+    temperature = config.getfloat('EVOLUTION', 'temperature')
+    nbiter = config.getint('EVOLUTION', 'nbiter')
+    p_inversion = config.getfloat('EVOLUTION', 'p_inversion')
+    p_indel = config.getfloat('EVOLUTION', 'p_indel')
     
     pth = INI_file[:-10]
     expected_profile = pd.read_table(pth+environment_file,sep='\t',header=None)[1]
@@ -20,15 +23,21 @@ def evol_master():
     gene_expression = sim.start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size)
     fitness = get_fitness(gene_expression, expected_profile)
     
-    for iter in range(nb_iter):
-        (tss, tts, prot, genome_size, fitness) = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel, temperature)
-        print('fitness : '+fitness)
+    list_fitness = []
     
-def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel, temperature):
+    for it in range(nbiter):
+        (tss, tts, prot, genome_size, fitness) = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel, temperature, expected_profile)
+        list_fitness.append(fitness)
+        print('fitness : ',fitness)
+    
+    with open('fitnes','w') as f:
+        f.write("\t".join(map(fitness,str)))
+    
+def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel, temperature, expected_profile):
     # making backups for the current genome
-    tss_backup = tss.DataFrame.copy()
-    tts_backup = tts.DataFrame.copy()
-    prot_backup = prot.DataFrame.copy()
+    tss_backup = tss.copy()
+    tts_backup = tts.copy()
+    prot_backup = prot.copy()
     genome_size_backup = genome_size
     fitness_backup = fitness
     
@@ -123,7 +132,7 @@ def indel(p_indel, tss, tts, prot, genome_size):
     
 def get_fitness(gene_expression, expected_profile):
     if len(gene_expression) != len(expected_profile):
-        print("Error : gene_expression and expected_profile don't have the same length : %d vs %d",len(gene_expression),len(expected_profile))
+        print("Error : gene_expression and expected_profile don't have the same length : ",len(gene_expression)," vs ",len(expected_profile))
     total = sum(gene_expression)
     profile = [expression / total for expression in gene_expression]
     distance = sum([np.abs(profile[i]-expected_profile[i]) for i in range(len(profile))])
