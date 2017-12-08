@@ -7,7 +7,4 @@ We consider two types of mutations :
 
 
 TO DO:
--implement a function that takes a genome and its fitness, create a new genome by mutations, run a simulation on it, compute its fitness and return either the old or the new genome according to their fitnesses
--implement a function that makes random inversions in the genome with a given probability
--implement a function that makes random insertion/deletion in the genome with a given probability
--implement a function that compute the fitness given the results of a simulation and a target profile of gene expression
+-think about what we need to keep track of during evolution and implement it
