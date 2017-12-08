@@ -3,11 +3,28 @@ import simulation as sim
 INI_file=sys.argv[1]
 output_dir=sys.argv[2]
 
-temperature = 1
 
 def evol_master():
+    # read the evolution parameters from the config file
+    config = read_config_file(INI_file)
+    environment_file = config.get('EVOLUTION', 'environment')
+    temperature = config.get('EVOLUTION', 'temperature')
+    nbiter = config.get('EVOLUTION', 'nbiter')
+    p_inversion = config.get('EVOLUTION', 'p_inversion')
+    p_indel = config.get('EVOLUTION', 'p_indel')
     
-def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel):
+    pth = INI_file[:-10]
+    expected_profile = pd.read_table(pth+environment_file,sep='\t',header=None)[1]
+    
+    (tss, tts, prot, genome_size) = sim.load_genome(INI_file)
+    gene_expression = sim.start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size)
+    fitness = get_fitness(gene_expression, expected_profile)
+    
+    for iter in range(nb_iter):
+        (tss, tts, prot, genome_size, fitness) = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel, temperature)
+        print('fitness : '+fitness)
+    
+def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, p_indel, temperature):
     # making backups for the current genome
     tss_backup = tss.DataFrame.copy()
     tts_backup = tts.DataFrame.copy()
@@ -111,3 +128,6 @@ def get_fitness(gene_expression, expected_profile):
     profile = [expression / total for expression in gene_expression]
     distance = sum([np.abs(profile[i]-expected_profile[i]) for i in range(len(profile))])
     return np.exp(-distance) # fitness is exp(-distance) so it's between 0 and 1
+
+
+evol_master()
