@@ -644,11 +644,7 @@ def start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size):
     for i, v in enumerate(tr_nbr):
         print("Transcript{} : {}".format(i, v))
 
-    return (ITERATIONS_NB, RNAPS_NB,
-            tr_nbr, tr_times, init_rate, 
-            RNAPs_tr, RNAPs_pos, RNAPs_unhooked_id,
-            save_RNAPs_info, save_tr_info, save_Barr_sigma, save_Dom_size,
-            cov_bp, tr_end)
+    return (tr_nbr)
 
 
 # This function for resuming the simulation by reading npz files
