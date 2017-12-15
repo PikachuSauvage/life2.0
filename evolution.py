@@ -20,7 +20,7 @@ def evol_master():
     pth = INI_file[:-10]
     expected_profile = pd.read_table(pth+environment_file,sep='\t',header=None)[1]
     
-    (tss, tts, prot, genome_size) = sim.load_genome(INI_file)
+    tss, tts, prot, genome_size = sim.load_genome(INI_file)
     gene_expression = sim.start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size)
     fitness = get_fitness(gene_expression, expected_profile)
     
@@ -29,7 +29,7 @@ def evol_master():
         f.write("fitness\tgenome size\tmutation type\n")
         for it in range(nbiter):
             temperature *= temperature_rate
-            (tss, tts, prot, genome_size, fitness, mutation_type) = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile)
+            tss, tts, prot, genome_size, fitness, mutation_type = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile)
             list_fitness.append(fitness)
             print('fitness : ',fitness)
             # mutation_type is 1 for inversion and 2 for indel
