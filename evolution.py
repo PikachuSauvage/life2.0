@@ -26,13 +26,14 @@ def evol_master():
     
     list_fitness = []
     with open(fitness_file,'w') as f:
-        f.write("fitness\tgenome size\n")
+        f.write("fitness\tgenome size\tmutation type\n")
         for it in range(nbiter):
             temperature *= temperature_rate
-            (tss, tts, prot, genome_size, fitness) = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile)
+            (tss, tts, prot, genome_size, fitness, mutation_type) = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile)
             list_fitness.append(fitness)
             print('fitness : ',fitness)
-            f.write(str(fitness)+"\t"+str(genome_size)+"\n")
+            # mutation_type is 1 for inversion and 2 for indel
+            f.write(str(fitness)+"\t"+str(genome_size)+"\t"+str(mutation_type)+"\n")
 
     
 def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile):
@@ -45,8 +46,10 @@ def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperatur
     
     if np.random.rand() < p_inversion: # decide if there is an inversion or indel
         inversion(tss, tts, prot, genome_size)
+        mutation_type = 1
     else:
         genome_size = indel(tss, tts, prot, genome_size)
+        mutation_type = 2
     
     print(tss)
     print(tts)
@@ -63,7 +66,7 @@ def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperatur
             prot = prot_backup
             genome_size = genome_size_backup
             fitness = fitness_backup
-    return (tss, tts, prot, genome_size, fitness)
+    return (tss, tts, prot, genome_size, fitness, mutation_type)
                 
     
 def inversion(tss, tts, prot, genome_size):
