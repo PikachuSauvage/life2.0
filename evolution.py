@@ -3,10 +3,7 @@ import simulation as sim
 import pandas as pd
 import numpy as np
 
-
-
-
-def evol_master(fitness_file):
+def evol_master():
     # read the evolution parameters from the config file
     config = sim.read_config_file(INI_file)
     environment_file = config.get('EVOLUTION', 'environment')
@@ -14,7 +11,7 @@ def evol_master(fitness_file):
     temperature_rate = config.getfloat('EVOLUTION', 'temperature_rate')
     nbiter = config.getint('EVOLUTION', 'nbiter')
     p_inversion = config.getfloat('EVOLUTION', 'p_inversion')
-    #fitness_file = config.get('EVOLUTION', 'output_file')
+    fitness_file = config.get('EVOLUTION', 'output_file')
     
     pth = INI_file[:-10]
     expected_profile = pd.read_table(pth+environment_file,sep='\t',header=None)[1]
@@ -141,8 +138,8 @@ def get_fitness(gene_expression, expected_profile):
 
     
 if __name__ == '__main__':
-	#INI_file='param.ini'  #sys.argv[1]
-	#  output_dir=sys.argv[2]
+	INI_file='params.ini'  #sys.argv[1]
+	output_dir='output/' #sys.argv[2]
 	evol_master()
 	
 #cat fitness*.txt > pp.txt && R -q -e "x<- read.csv('pp.txt');summary(x);sd(x[,1])"
