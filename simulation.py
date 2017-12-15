@@ -190,15 +190,15 @@ def get_tr_info(tss, tts, TU_tts, Kon, Poff):
                 k += 1
         else:
             # go leftB
-            k = 0 #TU_id #0 #len(this_TU_tts)# TTS id index ### [0 1 2 3 4 5]
+            k = TU_id #0 #len(this_TU_tts)# TTS id index ### [0 1 2 3 4 5]
             proba_rest = 1
-            while proba_rest > 0 and k < len(this_TU_tts) : # >= 0 : #
+            while proba_rest > 0 :# and k < len(this_TU_tts) : # >= 0 : #
                 if tts['TTS_pos'][k] < tss['TSS_pos'][i] : # and tts['TUindex'][k] == TU_id :
                     tr_id.append(j)
                     tr_strand.append(-1)
                     tr_start.append(tss['TSS_pos'][i])
                     # after getting them, we shall (in every loop) generate a new tr_end
-                    tr_end.append(this_TU_tts[k])
+                    tr_end.append(tts['TTS_pos'][k])
                     # the probability to choose a specific transcript
                     tr_rate.append(Kon[i] * (Poff[k] * proba_rest)) 
                     proba_rest = (1 - Poff[k]) * proba_rest
