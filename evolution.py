@@ -25,7 +25,7 @@ def evol_master():
         for it in range(nbiter):
             temperature *= temperature_rate
             tss, tts, prot, genome_size, fitness, mutation_type = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile)
-            print('fitness : ',fitness)
+            print("iteration : "+str(it)+"\tfitness : "+str(fitness))
             # mutation_type is 1 for inversion and 2 for indel
             f.write(str(fitness)+"\t"+str(genome_size)+"\t"+str(mutation_type)+"\n")
 
@@ -45,9 +45,9 @@ def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperatur
         genome_size = indel(tss, tts, prot, genome_size)
         mutation_type = 2
     
-    print(tss)
-    print(tts)
-    print(prot)
+    #~ print(tss)
+    #~ print(tts)
+    #~ print(prot)
     gene_expression = sim.start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size)
     fitness = get_fitness(gene_expression, expected_profile)
     
