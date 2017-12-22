@@ -3,15 +3,19 @@ import simulation as sim
 import pandas as pd
 import numpy as np
 
-def evol_master():
+INI_file='params.ini'  #sys.argv[1]
+output_dir='output/' #sys.argv[2]
+
+def evol_master(arg):
+    fitness_file,temperature  = arg
     # read the evolution parameters from the config file
     config = sim.read_config_file(INI_file)
     environment_file = config.get('EVOLUTION', 'environment')
-    temperature = config.getfloat('EVOLUTION', 'temperature')
+    #temperature = config.getfloat('EVOLUTION', 'temperature')
     temperature_rate = config.getfloat('EVOLUTION', 'temperature_rate')
     nbiter = config.getint('EVOLUTION', 'nbiter')
     p_inversion = config.getfloat('EVOLUTION', 'p_inversion')
-    fitness_file = config.get('EVOLUTION', 'output_file')
+    #fitness_file = config.get('EVOLUTION', 'output_file')
     
     pth = INI_file[:-10]
     expected_profile = pd.read_table(pth+environment_file,sep='\t',header=None)[1]
@@ -26,7 +30,7 @@ def evol_master():
             temperature *= temperature_rate
             tss, tts, prot, genome_size, fitness, mutation_type = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile)
             print("iteration : "+str(it)+"\tfitness : "+str(fitness))
-            # mutation_type is 1 for inversion and 2 for indel
+            # mutation_type is 0 if no changes occured 1 for inversion and 2 for indel
             f.write(str(fitness)+"\t"+str(genome_size)+"\t"+str(mutation_type)+"\n")
 
     
@@ -60,6 +64,7 @@ def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperatur
             prot = prot_backup
             genome_size = genome_size_backup
             fitness = fitness_backup
+            mutation_type = 0
     return (tss, tts, prot, genome_size, fitness, mutation_type)
                 
     
@@ -136,8 +141,6 @@ def get_fitness(gene_expression, expected_profile):
 
     
 if __name__ == '__main__':
-	INI_file='params.ini'  #sys.argv[1]
-	output_dir='output/' #sys.argv[2]
 	evol_master()
 	
 #cat fitness*.txt > pp.txt && R -q -e "x<- read.csv('pp.txt');summary(x);sd(x[,1])"
