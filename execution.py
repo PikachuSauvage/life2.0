@@ -22,7 +22,7 @@ def run(output_file):
 
 if __name__ == '__main__':
 	p = Pool(8)
-	p.map(run, ["fitness"+str(i)+".txt" for i in range(8)])
+	p.map(evol_master, [("nfitnessevoltemp"+str((i+1)*0.005)+".txt", (i+1)*0.005)for i in range(21)])
 
 
 

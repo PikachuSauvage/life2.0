@@ -2,11 +2,13 @@ import sys
 import simulation as sim
 import pandas as pd
 import numpy as np
+import scipy
 
 INI_file='params.ini'  #sys.argv[1]
 output_dir='output/' #sys.argv[2]
 
 def evol_master(arg):
+    scipy.random.seed() 
     fitness_file,temperature  = arg
     # read the evolution parameters from the config file
     config = sim.read_config_file(INI_file)
@@ -15,6 +17,7 @@ def evol_master(arg):
     temperature_rate = config.getfloat('EVOLUTION', 'temperature_rate')
     nbiter = config.getint('EVOLUTION', 'nbiter')
     p_inversion = config.getfloat('EVOLUTION', 'p_inversion')
+    indel_size = config.getint('EVOLUTION', 'indel_size')
     #fitness_file = config.get('EVOLUTION', 'output_file')
     
     pth = INI_file[:-10]
@@ -26,15 +29,17 @@ def evol_master(arg):
     
     with open(fitness_file,'w') as f:
         f.write("fitness\tgenome size\tmutation type\n")
-        for it in range(nbiter):
-            temperature *= temperature_rate
-            tss, tts, prot, genome_size, fitness, mutation_type = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile)
-            print("iteration : "+str(it)+"\tfitness : "+str(fitness))
-            # mutation_type is 0 if no changes occured 1 for inversion and 2 for indel
+        
+    for it in range(nbiter):
+        temperature *= temperature_rate
+        tss, tts, prot, genome_size, fitness, mutation_type = evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, indel_size, expected_profile)
+        print("iteration : "+str(it)+"\tfitness : "+str(fitness))
+        # mutation_type is 0 if no changes occured 1 for inversion and 2 for indel
+        with open(fitness_file,'a') as f:
             f.write(str(fitness)+"\t"+str(genome_size)+"\t"+str(mutation_type)+"\n")
 
     
-def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, expected_profile):
+def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperature, indel_size, expected_profile):
     # making backups for the current genome
     tss_backup = tss.copy()
     tts_backup = tts.copy()
@@ -46,7 +51,7 @@ def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperatur
         inversion(tss, tts, prot, genome_size)
         mutation_type = 1
     else:
-        genome_size = indel(tss, tts, prot, genome_size)
+        genome_size = indel(tss, tts, prot, genome_size, indel_size)
         mutation_type = 2
     
     #~ print(tss)
@@ -99,36 +104,79 @@ def inversion(tss, tts, prot, genome_size):
             prot.at[i,'prot_pos'] = min_pos + max_pos - prot['prot_pos'][i]
     
         
-def indel(tss, tts, prot, genome_size):
-    correct_position = False
-    while not correct_position:
-        correct_position = True
-        pos = np.random.randint(genome_size) + 1
-        for i in range(len(tss['TUindex'])):
-            if tss['TUorient'][i] == '+':
-                if pos >= tss['TSS_pos'][i] and pos <= tts['TTS_pos'][i]:
-                    correct_position = False
-            else:
-                if pos <= tss['TSS_pos'][i] and pos >= tts['TTS_pos'][i]:
-                    correct_position = False
+def indel(tss, tts, prot, genome_size, indel_size):
     if np.random.rand() < 0.5: # same probability for insertion or deletion
         insertion = 1
     else:
         insertion = -1
-    for i in range(len(tss['TUindex'])):
-        if pos < tss['TSS_pos'][i]:
-            tss.at[i,'TSS_pos'] += insertion
-            tts.at[i,'TTS_pos'] += insertion
-    deleted_prot = -1
-    for i in range(len(prot['prot_pos'])):
-        if pos < prot['prot_pos'][i]:
-            prot.at[i,'prot_pos'] += insertion
-        if pos == prot['prot_pos'][i]:
-            deleted_prot = i # check if a barrier is being removed
-    if deleted_prot != -1:
-        prot.drop(deleted_prot)
-        print("Deletion of a protein!!!!!!!!")
-    genome_size += insertion
+    correct_positions = False
+    while not correct_positions:
+        correct_positions = True
+        a = np.random.randint(genome_size) + 1
+        size = np.random.poisson(indel_size)
+        for i in range(len(tss['TUindex'])):
+            if tss['TUorient'][i] == '+':
+                if a >= tss['TSS_pos'][i] and a <= tts['TTS_pos'][i]:
+                    correct_positions = False
+                    continue
+            else:
+                if a <= tss['TSS_pos'][i] and a >= tts['TTS_pos'][i]:
+                    correct_positions = False
+                    continue
+        if insertion == -1:
+            b = a + size
+            if b > genome_size:
+                b -= genome_size
+                for i in range(len(tss['TUindex'])):
+                    if b >= tss['TSS_pos'][i] or a <= tss['TSS_pos'][i]:
+                        correct_positions = False
+                        continue
+                for i in range(len(prot['prot_pos'])):
+                    if b >= prot['prot_pos'][i] or a <= prot['prot_pos'][i]:
+                        correct_positions = False
+                        continue
+            else:
+                for i in range(len(tss['TUindex'])):
+                    if a <= tss['TSS_pos'][i] and b >= tss['TSS_pos'][i]:
+                            correct_positions = False
+                            continue
+                for i in range(len(prot['prot_pos'])):
+                    if a <= prot['prot_pos'][i] and b >= prot['prot_pos'][i]:
+                        correct_positions = False
+                        continue
+            for i in range(len(tss['TUindex'])):
+                if tss['TUorient'][i] == '+':
+                    if b >= tss['TSS_pos'][i] and b <= tts['TTS_pos'][i]:
+                        correct_positions = False
+                        continue
+                else:
+                    if b <= tss['TSS_pos'][i] and b >= tts['TTS_pos'][i]:
+                        correct_positions = False
+                        continue
+    if insertion == -1:
+        if b < a:
+            for i in range(len(tss['TUindex'])):
+                tss.at[i,'TSS_pos'] -= b
+                tts.at[i,'TTS_pos'] -= b
+            for i in range(len(prot['prot_pos'])):
+                prot.at[i,'prot_pos'] -= b
+        else:
+            for i in range(len(tss['TUindex'])):
+                if a < tss['TSS_pos'][i]:
+                    tss.at[i,'TSS_pos'] -= size
+                    tts.at[i,'TTS_pos'] -= size
+            for i in range(len(prot['prot_pos'])):
+                if a < prot['prot_pos'][i]:
+                    prot.at[i,'prot_pos'] -= size
+    else:
+        for i in range(len(tss['TUindex'])):
+            if a < tss['TSS_pos'][i]:
+                tss.at[i,'TSS_pos'] += size
+                tts.at[i,'TTS_pos'] += size
+        for i in range(len(prot['prot_pos'])):
+            if a < prot['prot_pos'][i]:
+                prot.at[i,'prot_pos'] += size
+    genome_size += insertion * size
     return genome_size
     
 def get_fitness(gene_expression, expected_profile):
@@ -138,7 +186,7 @@ def get_fitness(gene_expression, expected_profile):
     profile = [expression / total for expression in gene_expression]
     distance = sum([np.abs(profile[i]-expected_profile[i]) for i in range(len(profile))])
     return np.exp(-distance) # fitness is exp(-distance) so it's between 0 and 1
-
+    
     
 if __name__ == '__main__':
 	evol_master()
