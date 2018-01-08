@@ -3,20 +3,21 @@ import simulation as sim
 import pandas as pd
 import numpy as np
 import scipy
+import matplotlib.pyplot as plt
 
 INI_file='params.ini'  #sys.argv[1]
 output_dir='output/' #sys.argv[2]
 
 def evol_master(arg):
     scipy.random.seed() 
-    fitness_file,temperature  = arg
+    fitness_file,p_inversion  = arg
     # read the evolution parameters from the config file
     config = sim.read_config_file(INI_file)
     environment_file = config.get('EVOLUTION', 'environment')
-    #temperature = config.getfloat('EVOLUTION', 'temperature')
+    temperature = config.getfloat('EVOLUTION', 'temperature')
     temperature_rate = config.getfloat('EVOLUTION', 'temperature_rate')
     nbiter = config.getint('EVOLUTION', 'nbiter')
-    p_inversion = config.getfloat('EVOLUTION', 'p_inversion')
+    #p_inversion = config.getfloat('EVOLUTION', 'p_inversion')
     indel_size = config.getint('EVOLUTION', 'indel_size')
     #fitness_file = config.get('EVOLUTION', 'output_file')
     
@@ -57,6 +58,8 @@ def evol_main_loop(tss, tts, prot, genome_size, fitness, p_inversion, temperatur
     #~ print(tss)
     #~ print(tts)
     #~ print(prot)
+    #~ display_genome(tss,tts,prot,genome_size)
+    
     gene_expression = sim.start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size)
     fitness = get_fitness(gene_expression, expected_profile)
     
@@ -186,7 +189,16 @@ def get_fitness(gene_expression, expected_profile):
     profile = [expression / total for expression in gene_expression]
     distance = sum([np.abs(profile[i]-expected_profile[i]) for i in range(len(profile))])
     return np.exp(-distance) # fitness is exp(-distance) so it's between 0 and 1
-    
+
+def display_genome(tss, tts, prot, genome_size):
+    axes = plt.gca()
+    axes.set_xlim(0,genome_size)
+    axes.set_ylim(-0.2,0.2)
+    for i in range(len(tss['TUindex'])):
+        plt.plot((tss['TSS_pos'][i],tts['TTS_pos'][i]),(0,0))
+    for i in range(len(prot['prot_pos'])):
+        plt.plot((prot['prot_pos'][i]-10,prot['prot_pos'][i]+10),(0.1,0.1))
+    plt.show()   
     
 if __name__ == '__main__':
 	evol_master()

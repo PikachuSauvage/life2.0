@@ -213,7 +213,7 @@ def f_prob_init_rate(init_rate, sum_init_rate, DELTA_T):
     return (1-np.exp(-sum_init_rate*DELTA_T)) * (init_rate/sum_init_rate)
 
 def f_prob_unhooked_rate(sum_Kon, DELTA_T, RNAPs_unhooked_nbr):
-    return np.maximum(np.exp(-sum_Kon*DELTA_T)/RNAPs_unhooked_nbr,10E-5)
+    return np.exp(-sum_Kon*DELTA_T)/RNAPs_unhooked_nbr
 
 # Get the transciption unit with the list of tts belonging to TU.
 def get_TU_tts(tss, tts):
@@ -452,11 +452,12 @@ def start_transcribing(INI_file, output_dir, tss, tts, prot, genome_size):
             tss_and_unhooked_RNAPs = np.concatenate([tss_id, np.full(len(RNAPs_unhooked_id), -1, dtype=int)])
 
             # pick up
+            
             try:
                 picked_tr = np.random.choice(tss_and_unhooked_RNAPs, len(RNAPs_unhooked_id), replace=False, p=all_prob) #RNAPs_unhooked_id
             except(ValueError):
                 print("Erreur!!!!!!!!")
-                #~ print(all_prob)
+                print(all_prob)
                 #~ print(tss_and_unhooked_RNAPs)
             # This is the KEY !
             picked_tr_hooked_id = picked_tr[np.where(picked_tr!=-1)[0]]
